@@ -1,0 +1,6 @@
+part1:
+    database: my_part1_db
+    host: my_part1_host
+    port: 12345
+    username: user
+    password: password

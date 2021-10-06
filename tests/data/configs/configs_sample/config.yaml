@@ -1,0 +1,15 @@
+mode: dev
+foo: 
+    bar: text
+    baz: 123
+    test_env: ${ENV_VALUE_TEST}
+data:
+    # new_key: hehehe
+    bool: False
+    string: text
+    int: 1
+    float: 0.1
+    list: [1, 2, 3]
+    dict:
+        from: to
+

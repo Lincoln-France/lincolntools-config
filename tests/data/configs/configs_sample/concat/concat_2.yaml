@@ -1,0 +1,3 @@
+concat2:
+    other_dir: !join [*project_dir_concat, /other]
+    subdir_concat: !join [*subproject_dir_concat, /subdir]

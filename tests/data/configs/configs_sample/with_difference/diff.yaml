@@ -1,0 +1,10 @@
+mode: dev
+zfoo: 
+    zbar: text
+    zbaz: 123
+config_only:
+    hello: world
+only:
+    in:
+        config: hello
+

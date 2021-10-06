@@ -1,0 +1,87 @@
+### PIPELINE AZURE DEVOPS
+# Pipeline qui effectue les tâches suivantes :
+# 1 - Lancer les tests unitaires (job "Test")
+# 2 - Build le package à partir des sources (job "BuildAndPublish")
+# 3 - Publier le package sur le Feed
+
+trigger:
+- master
+
+variables:
+  vmImageName: 'ubuntu-latest' # version de l'OS utilisé comme environnement
+  artifactFeedName: 'lincoln-python-packages' # nom du feed des artifacts
+
+
+stages:
+- stage : Testing
+  displayName: Testing stage
+  jobs:
+  - job : Test
+    displayName: Unit testing job
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      matrix:
+  #        Python35: tests do not pass on 3.5
+  #          python.version: '3.5'
+        Python36:
+          python.version: '3.6'
+        Python37:
+          python.version: '3.7'
+        Python38:
+          python.version: '3.8'
+    steps: 
+      - task: UsePythonVersion@0
+        displayName: 'Use Python $(python.version)' 
+        inputs:
+          versionSpec: '$(python.version)'
+
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r $(Build.SourcesDirectory)/requirements/dev.txt
+        displayName: 'Install dependencies'
+
+      - script: |
+          pip install pytest-azurepipelines
+          pytest
+        displayName: 'Launch pytest'
+
+
+- stage : BuildAndPushDocker
+  dependsOn: Testing
+  condition: succeeded()
+  displayName: Build and Publish stage
+  jobs:
+  - job : BuildAndPublish
+    displayName: Build and Publish job
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      matrix:
+        Python37:
+          python.version: '3.7'
+
+    steps: 
+      - task: UsePythonVersion@0
+        displayName: 'Use Python $(python.version)' 
+        inputs:
+          versionSpec: '$(python.version)'
+      # Install python distributions like wheel, twine etc
+      - script: |
+          pip install wheel
+          pip install twine
+        displayName: 'Install python distributions'
+
+      # Build the python distribution from source
+      - script: |
+          python setup.py bdist_wheel
+        displayName: 'Build from source'
+
+      - task: TwineAuthenticate@1
+        displayName: 'Twine Authenticate'
+        inputs:
+          artifactFeed: 'lincoln-python-packages'
+          
+          # Use command line script to 'twine upload', use -r to pass the repository name and --config-file to pass the environment variable set by the authenticate task.
+      - script: |
+          python -m twine upload -r lincoln-python-packages --config-file $(PYPIRC_PATH) dist/*.whl

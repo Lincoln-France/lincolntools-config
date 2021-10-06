@@ -1,0 +1,4 @@
+part2:
+    project_dir: </path/to/project>
+    data_dir: </path/to/data>
+    tests_dir: </path/to/tests>

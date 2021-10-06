@@ -1,0 +1,35 @@
+ 
+version: "3"
+services:
+  core:
+    build:
+      context: .
+      dockerfile: dev/Dockerfile-dev
+      args:
+        PUID: 1001
+        PGID: 1001
+        WORKDIR: /package
+        VERISON: 1.0.0
+    image: lincolntools-config-dev:1.0
+    container_name: lincolntools-config-dev
+    user: lincoln
+    volumes:
+      - "${PWD}:/package"
+      # - "${PWD}/data:/package/data"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.port=8888"
+    # env_file:
+    #   - .env
+    networks:
+      - default
+      - netproxy
+
+
+
+networks:
+  netproxy:
+    external:
+      name: netproxy
+
+

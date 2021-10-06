@@ -1,0 +1,8 @@
+mode: str
+zfoo: 
+    zbar: str
+    zbaz: int
+config_only:
+    hello: world
+    
+

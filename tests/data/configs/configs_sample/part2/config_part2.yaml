@@ -1,0 +1,13 @@
+part2:
+    classic:
+        project_dir: /path/to/project
+        data_dir: /path/to/data
+        tests_dir: /path/to/tests
+    complex:
+        project_dir: &project_dir /path/to/project
+        data_dir: !join [*project_dir, /data]
+        tests_dir: !join [*project_dir, /tests]
+        subproject_dir: &subproject_dir !join [*project_dir, /subproject]
+        subproject_data_dir: !join [*subproject_dir, /data]
+        subproject_tests_dir: !join [*subproject_dir, /tests]
+
