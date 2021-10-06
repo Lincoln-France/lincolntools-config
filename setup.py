@@ -22,7 +22,7 @@ test_requirements = ['pytest>=3', ]
 
 setup(
     author="Lincoln Innovation",
-    author_email='innovationsquad@mel.lincoln.fr',
+    author_email='labinnovation@mel.lincoln.fr',
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -35,11 +35,12 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     description="Boîte à outils Python made in Lincoln",
+    download_url="https://github.com/Lincoln-France/lincolntools-config/archive/refs/tags/v1.0.3.tar.gz",
     install_requires=prod_requirements,
     long_description=readme + '\n\n' + history,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    keywords='lincolntools-config',
+    keywords=['configuration', 'yaml', 'lincoln', 'lincolntools', 'lincolntools-config'],
     name='lincolntools-config',
     # packages=find_packages(include=['lincolntools-config', 'lincolntools-config.*']),
     packages=find_namespace_packages(include=['lincolntools.*']),

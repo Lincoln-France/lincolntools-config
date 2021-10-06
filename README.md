@@ -1,71 +1,38 @@
 # lincolntools-config
 
-> lincolntools : Boîte à outils Python made in Lincoln
+> lincolntools : Python toolbox made in [Lincoln France](http://www.lincoln.fr)
 
-* Auteur: Lincoln Innovation
-* Date de création: 2020-10-01
-* voir [AUTHORS.md](./AUTHORS.md)
+* Author: Lincoln Innovation
+* Creation date: 2020-10-01
+* see [AUTHORS.md](./AUTHORS.md)
 
-## Objectif
-
-Ce package fait parti du namespace `lincolntools`.<br>
-L'objectif de ce package est de fournir les outils nécessaire à la création d'un objet de configuration global pour un projet Python.
+This package belongs to the `lincolntools` namespace <br>
+The goal of this package is to provide the necessary tools to create a unique and global configuration object that can be queried anywhere in a Python project.
 
 
-## Table des matières
+## Table of content
 
-1. [Les répertoires](#les-répertoires)
-2. [Les fichiers importants](#les-fichiers-importants)
-3. [Documentation](#documentation)
-3. [Tester](#tester)
-4. [Contribuer](#contribuer)
-5. [Historique](#historique)
-
-## Les répertoires
-
-```bash
-.
-├── lincolntools        # namespace contenant le module
-    └── config/         # le module config
-├── requirements/       # dossier contenant les requirements python
-├── tests/              # dossier contenant les tests du package
-├── logs/               # dossier contenant les logs : dev specific
-└── docs/               # documentations générées par sphinx
-```
-
-## Les fichiers importants
-
-```bash
-.
-├── lincolntools
-    └── config
-        ├── __init__.py
-        ├── config.py               # 
-        └── config_loader.py        #      
-├── README.md                       # this file
-├── HISTORY.md                      # historique des version et les modifications
-├── CONTRIBUTING.md                 # comment contribuer au projet
-├── LICENSE                         # license si besoin
-├── Makefile                        # Makefile: aide à la compilation
-├── .gitignore                      # Liste des éléments que git doit ignorer lors du commit
-├── requirements.txt                # Contient les dépendances (=packages) pyhton du projet
-├── setup.cfg                       # aide au setup.py
-├── setup.py                        # setup.py pour créer un package python
-└── tox.ini                         # aide pour les tests
-```
+1. [Documentation](#documentation)
+2. [Tests](#tests)
+3. [Contribute](#contribute)
+4. [History](#historique)
+5. [Credits](#credits)
 
 ## Installation
 
-    To-Do.......
+```bash
+    pip install lincolntools-config
+```
+
+## How to use
+There are several possibilities to load a YAML configuration file :
+* Provide the path to **a file** which will be processed and transformed into a Python `dict`
+* Provide the path to **a folder** that contains one or more YAML files that will be concatenated into a single object.
 
 
-## Comment l'utiliser
-On a la possibilité de charger une configuration au format YAML de plusieurs manière :
-* Fournir le chemin vers un fichier qui sera traité et transformé en `dict` Python.
-* Fournir le chemin vers un dossier qui contient un ou plusieurs fichier YAML qui seront concatenés en un seul objet.
 
-### Exemple
-Dans cet exemple on part du principe qu'on dispose de l'arborescence suivante: 
+### Example
+In the following examples we suppose our config folder has the given structure :
 
 ```bash
 └── config
@@ -101,7 +68,7 @@ print(my_config.get('foo'))
 print(my_config.get('foo').get('foo_key'))
 # foo_value
 
-print(my_config.get('foo')['foo_key']) # pareil qu'au dessus avec une autre syntaxe
+print(my_config.get('foo')['foo_key']) # same as above but with another syntax
 # foo_value
 
 print(my_config.flatten())
@@ -116,32 +83,30 @@ print(my_config.dump())
 ```
 
 ### Important
-La classe `Config` est basé sur le design pattern Singleton ([explications ici](https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html)). Celà signifie qu'une seule et unique instance de ̀`Config` peut être créée pendant la vie d'un programme. 
+The `Config` class is based on the Single design pattern ([official documentation](https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html)). <br>
+**TLDR** : Only one instance of `Config` can be initialized during the whole program lifetime.
+ 
 ```python
 from lincolntools.config import Config
-my_first_config = Config('/path/to/config') # ok, pas d'autre instance existe
+my_first_config = Config('/path/to/config') # ok, no other instance exists
 my_other_config = Config('/path/to/config') # nok
-# Exception: Cette classe est un singleton!
+# Exception: This is a singleton
 ```
 
-## Tester
-Lancer les tests avec le version par défaut de Python :
+## Tests
+Launch tests with the default Python version :
 ```bash
-# dans le projet
+# in the project folder
 pytest
 ````
-Lancer les tests sur toutes les versions de Python (voir [`tox.ini`](./tox.ini)) :
+Launch tests on multiple Python versions (see [`tox.ini`](./tox.ini)) :
+
 ```bash
-# dans le projet:
+# in the project folder
 tox
 ```
 
-## Contribuer
-
-Voir [CONTRIBUTING.md](./CONTRIBUTING.md)
-
-
-## Historique
+## History
 
 Voir [HISTORY.md](./HISTORY.md)
 
