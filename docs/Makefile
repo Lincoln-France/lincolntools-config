@@ -6,7 +6,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
 SPHINXPROJ    = lincolntools-config
 SOURCEDIR     = .
-BUILDDIR      = _build
+BUILDDIR      = html
+# BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
