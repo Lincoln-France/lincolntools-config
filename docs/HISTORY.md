@@ -22,3 +22,6 @@
 ## 1.0.4 (2021-08-10)
 
 * Documentation and comments translation.
+## 1.0.5 (2021-08-10)
+
+* Upgraded PyYAML version to 5.4.0 (previous version had vulnerabilities)

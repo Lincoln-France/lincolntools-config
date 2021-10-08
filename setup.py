@@ -38,7 +38,7 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     description="Boîte à outils Python made in Lincoln",
-    download_url="https://github.com/Lincoln-France/lincolntools-config/archive/refs/tags/v1.0.4.tar.gz",
+    download_url="https://github.com/Lincoln-France/lincolntools-config/archive/refs/tags/v1.0.5.tar.gz",
     install_requires=prod_requirements,
     long_description=readme + '\n\n' + history,
     long_description_content_type="text/markdown",
@@ -50,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/Lincoln-France/lincolntools-config',
-    version='1.0.4',
+    version='1.0.5',
     zip_safe=False,
 )
