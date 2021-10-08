@@ -13,7 +13,6 @@ with open('README.md') as readme_file:
 with open('HISTORY.md') as history_file:
     history = history_file.read()
 
-# with open(os.path.join(directory_path, 'requirements/prod.txt')) as prod_requirements_file:
 with open('requirements/prod.txt') as prod_requirements_file:
     prod_requirements = prod_requirements_file.read().splitlines()
     if len(prod_requirements) and prod_requirements[0].startswith('-r'):
@@ -37,7 +36,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="Boîte à outils Python made in Lincoln",
+    description="Python tool to load config files",
     download_url="https://github.com/Lincoln-France/lincolntools-config/archive/refs/tags/v1.0.5.tar.gz",
     install_requires=prod_requirements,
     long_description=readme + '\n\n' + history,
