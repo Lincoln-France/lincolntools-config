@@ -28,7 +28,7 @@ setup(
     author_email='labinnovation@mel.lincoln.fr',
     python_requires='>=3.5',
     classifiers=[
-        'Development Status :: 3 - Production',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
