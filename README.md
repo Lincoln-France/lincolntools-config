@@ -1,6 +1,10 @@
 # lincolntools-config
 
+<a href="https://github.com/Lincoln-France/lincolntools-config/blob/main/LICENSE.md"><img alt="GitHub license" src="https://img.shields.io/github/license/Lincoln-France/lincolntools-config"></a>
+<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/Lincoln-France/lincolntools-config">
+
 > lincolntools : Python toolbox made in [Lincoln France](http://www.lincoln.fr)
+
 
 * Author: Lincoln Innovation
 * Creation date: 2020-10-01
