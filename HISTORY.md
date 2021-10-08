@@ -17,3 +17,8 @@
 ## 1.0.3 (2021-02-05)
 
 * Concatenante yaml files before parsing. Allows anchor to be cross files.
+
+
+## 1.0.4 (2021-08-10)
+
+* Documentation and comments translation.

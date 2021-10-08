@@ -1,11 +1,11 @@
-# Auteurs
+# Authors
 
-## Equipe
+## Team
 
 Lincoln Innovation
 
 * Lead dev: Innovation Squad - innovationsquad@mel.lincoln.fr
 
-## Contributeurs
+## Contributorscopy
 
-_pas encore_
+_not yet_

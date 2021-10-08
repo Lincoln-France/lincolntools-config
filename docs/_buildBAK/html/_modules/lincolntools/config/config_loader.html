@@ -1,0 +1,284 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>lincolntools.config.config_loader &#8212; lincolntools-config 1.0.4 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for lincolntools.config.config_loader</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">deepdiff</span> <span class="kn">import</span> <span class="n">DeepDiff</span>  <span class="c1"># For Deep Difference of 2 objects</span>
+<span class="kn">from</span> <span class="nn">easydict</span> <span class="kn">import</span> <span class="n">EasyDict</span>
+<span class="n">LOGGER</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConfigLoader"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader">[docs]</a><span class="k">class</span> <span class="nc">ConfigLoader</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Utility class that contains the functions to search yaml files and create the configuration object .&quot;&quot;&quot;</span>
+    <span class="c1">#: re.Pattern[]: Regex which matches the environment variables format in configuration file (ex. ${VAR_ENV})</span>
+    <span class="n">env_path_matcher</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\$\{([^}^{]+)\}&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConfigLoader.load"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EasyDict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Launch the process of configuration file(s) loading.</span>
+<span class="sd">        Depending on whether it is a path to a file or a folder, 2 different actions are launched.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path (str): Path to configuration file/folder.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            EasyDict: The python dict which contains the whole configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">EasyDict</span><span class="p">(</span><span class="n">ConfigLoader</span><span class="o">.</span><span class="n">load_from_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">EasyDict</span><span class="p">(</span><span class="n">ConfigLoader</span><span class="o">.</span><span class="n">load_from_folder</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.load_from_file"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.load_from_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load_from_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a Config object from a YAML file.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                file_path (str): Absolute path to file.</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                dict: Python dict which contains the configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.load_from_folder"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.load_from_folder">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load_from_folder</span><span class="p">(</span><span class="n">folder_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">concatenate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Creates a Config object from a folder. The folder and its subfolder are searched recursively to get the YAML files it contains.</span>
+<span class="sd">        These files are then read and concatenated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            folder_path (str): Absolute path to config folder.</span>
+<span class="sd">            concatenate (bool): If True, files are concatenated into a single file before it is parsed. Default value is True.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Python dict which contains the concatenated configs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Recursively read YAML files</span>
+        <span class="n">yaml_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="s1">&#39;**/*.yaml&#39;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">yaml_files</span> <span class="o">+=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="s1">&#39;**/*.yml&#39;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">conf</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">concatenate</span><span class="p">:</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Files loading and concatenation.&quot;</span><span class="p">)</span>
+            <span class="n">yaml_files_sorted_infos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">yaml_files</span><span class="p">)])</span>
+            <span class="n">yaml_files_sorted</span> <span class="o">=</span> <span class="p">[</span><span class="n">yaml_files</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">yaml_files_sorted_infos</span><span class="p">]</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">yaml_file</span> <span class="ow">in</span> <span class="n">yaml_files_sorted</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yaml_file_stream</span><span class="p">:</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">yaml_file_stream</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">conf</span> <span class="o">=</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_stream</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Configuration files loading&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">yaml_file</span> <span class="ow">in</span> <span class="n">yaml_files</span><span class="p">:</span>
+                <span class="n">new_conf</span> <span class="o">=</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_file</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+                <span class="n">conf</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_conf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">conf</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.read_yaml_file"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.read_yaml_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_yaml_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Create a Config object from a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename (str): Absolute path to file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Python dict which contains the key/value from the YAML file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Chargement du fichier de configuration </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.read_yaml_stream"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.read_yaml_stream">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">read_yaml_stream</span><span class="p">(</span><span class="n">filestream</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">BufferedIOBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Creates a Config object from a stream.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filestream (io.BufferedIOBase): stream</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Python dict which contains the key/value from the YAML file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Constructor which finds the &quot;custom tags&quot; (!join) in YAML file</span>
+        <span class="c1"># It enables the program to start a function which will concatenate 2 strings (a bit like os.path.join(...))</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span><span class="s1">&#39;!join&#39;</span><span class="p">,</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">join</span><span class="p">,</span> <span class="n">yaml</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">)</span>
+        <span class="c1"># Resolver which tries to match the regex for environment variables</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">add_implicit_resolver</span><span class="p">(</span><span class="s1">&#39;!env_var&#39;</span><span class="p">,</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">env_path_matcher</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">yaml</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">)</span>
+        <span class="c1"># Constructeur binded to the previous resolver for environment varaibles</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span><span class="s1">&#39;!env_var&#39;</span><span class="p">,</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">env_path_constructor</span><span class="p">,</span> <span class="n">yaml</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">filestream</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">yaml</span><span class="o">.</span><span class="n">YAMLError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Configuration file contains format error.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.env_path_constructor"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.env_path_constructor">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">env_path_constructor</span><span class="p">(</span><span class="n">loader</span><span class="p">:</span> <span class="n">yaml</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">yaml</span><span class="o">.</span><span class="n">ScalarNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Extracts the value of a node that matches the regex to read the associated environment variable then replace it with its value. &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">env_path_matcher</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">env_var</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">env_var_value</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">env_var</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No value for the following environment variable : [</span><span class="si">%s</span><span class="s2">]. Initializing it as empty string.&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">env_var</span><span class="p">))</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">return</span> <span class="n">env_var_value</span> <span class="o">+</span> <span class="n">value</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">():]</span></div>
+
+<div class="viewcode-block" id="ConfigLoader.check_template_match"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.check_template_match">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">check_template_match</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">template_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Takes the path to a configuration file as a parameter and returns True if the keys of its template match</span>
+<span class="sd">        the concerned config file. If not, returns False.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            loader (yaml.loader.SafeLoader): pyaml loader (SafeLoader there).</span>
+<span class="sd">            node (yaml.ScalarNode): The node which contains the tag in YAML file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if everything matches, False if not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">config_dict</span> <span class="o">=</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+        <span class="n">config_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+         
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">template_path</span><span class="p">:</span>
+            <span class="n">template_path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{path}</span><span class="s1">.template&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">config_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">template_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">),</span> <span class="n">template_path</span><span class="p">)</span>
+
+        <span class="n">template_dict</span> <span class="o">=</span> <span class="n">ConfigLoader</span><span class="o">.</span><span class="n">read_yaml_file</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">DeepDiff</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span> <span class="n">template_dict</span><span class="p">,</span> <span class="n">ignore_order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="s1">&#39;dictionary_item_removed&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">diff</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{config_name}</span><span class="s1"> - The following keys were not found in template file: </span><span class="si">{err}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_name</span><span class="o">=</span><span class="n">config_filename</span><span class="p">,</span> <span class="n">err</span><span class="o">=</span><span class="n">diff</span><span class="p">[</span><span class="s1">&#39;dictionary_item_removed&#39;</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">match</span></div>
+
+    <span class="c1"># define custom tag handler</span>
+<div class="viewcode-block" id="ConfigLoader.join"><a class="viewcode-back" href="../../../lincolntools.config.html#lincolntools.config.config_loader.ConfigLoader.join">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="n">loader</span><span class="p">:</span> <span class="n">yaml</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">yaml</span><span class="o">.</span><span class="n">ScalarNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot; Custom tags handler. Function launched when reading a configuration file and a \&quot;custom tag\&quot; !path is found.</span>
+<span class="sd">        It allows to concatenate the string parameters of the field. (ex: data_dir: !join [\*project_dir, /data])</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            loader (yaml.loader.SafeLoader): pyaml loader (SafeLoader there).</span>
+<span class="sd">            node (yaml.ScalarNode): The node which contains the tag in YAML file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Concatenated value of both strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">construct_sequence</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">])</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">lincolntools-config</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">lincolntools-config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">lincolntools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../CONTRIBUTING.html">Contribuer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../AUTHORS.html">Auteurs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../HISTORY.html">History</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Lincoln Innovation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

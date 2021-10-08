@@ -13,40 +13,40 @@ class Config():
     _instance = None
 
     @staticmethod
-    def get_instance(cfg_path: str = None):
-        """Méthode qui permet de récupérer l'instance existante. 
-        Si elle n'existe pas, une nouvelle instance est créée en utilisant les valeurs par défaut.
+    def get_instance(cfg_path: str = None) -> 'Config':
+        """Function which return the current instance. 
+        If it doesn't exists, a new instance is initialized using the default values.
 
         Returns:
-            Config: Le singleton Config.
+            Config: Config singleton.
         """
         if Config._instance is None:
             Config(cfg_path)
         return Config._instance
 
     @staticmethod
-    def get(cfg_path: str = None):
-        """Alias de la fonction `get_instance()`
+    def get(cfg_path: str = None) -> 'Config':
+        """Alias of `get_instance()`
 
         Returns:
-            Config: Le singleton Config.
+            Config: Config singleton.
         """
         return Config.get_instance(cfg_path)
 
     @staticmethod
     def clear():
-        """Réinitialise l'instance de Config."""
+        """Config instance reinitialization."""
         Config._instance = None
 
-    def dump(self, filename: str = None):
-        """ Permet de dump la configuration actuellement chargé. 
-        Le résultat produit est un fichier YAML qui contient la totalité de la configuration.
+    def dump(self, filename: str = None) -> str:
+        """ Creates a string dump of the current configuration. 
+        It can produce a YAML file which contains the dumped whole configuration.
 
 
         Args:
-            filename (str) : Le path vers le fichier de destination. 
+            filename (str) : Absolute path to destination file. 
         Returns:
-            str: Le résultat du dump sous forme d'une chaîne de caractère.
+            str: String value which is the dump of the Config object.
 
         """
         self.conf['_version'] += 1
@@ -57,20 +57,20 @@ class Config():
         return dump_string
 
     def __init__(self, cfg_path: str = None):
-        """Constructeur de l'objet Configuration.
+        """Constructor of the Config object.
 
         Args:
-            cfg_path (str, optional): Le chemin vers le fichier/dossier de configuration. Defaults to None.
+            cfg_path (str, optional): The path to configuration file/folder. Defaults to None.
 
         Raises:
-            Exception: Lancée si on essai de recréer une instance de Config si une instance existe déjà.
+            Exception: Raised if you try to create an instance if there is already one which exists.
         """
-        # Si une instance de la classe existe déjà => erreur.
+        # If an instance already exists => Exception.
         if Config._instance is not None:
-            raise Exception('Cette classe est un singleton!')
-        #: str: contient le path vers le fichier/dossier de configuration
+            raise Exception('Sorry but it is a singleton class!')
+        #: str: contains the path to a configuration file/folder
         self.config_path = None
-        #: dict: le `dict` qui correspond à l'objet configuration
+        #: dict: Python `dict` which is the configuration object
         self.conf = {}
         if cfg_path is not None:
             LOGGER.info('load config at: %s', cfg_path)
@@ -87,6 +87,13 @@ class Config():
         return self.conf.get(key, default_value)
 
     def _flatten(self, keys, values):
+        """
+        Flattens the config object as a list of string representation.
+
+        Returns:
+            list: A list of Key-value dicts that matches the config file hierarchy.
+
+        """
         flatten_list = []
         if isinstance(values, dict):
             for key, value in values.items():
@@ -105,10 +112,10 @@ class Config():
 
     def flatten(self, key: str = None):
         """
-        Fonction qui retourne l'objet Config sous forme de dict(). Les clés sont toute "aplaties" en une seule et même chaîne (ex: key1-subkey1: value).
+        Function which returns the Config object as a Python dict. Every keys are flattened into a single string (ex: key1-subkey1: value).
 
         Returns:
-            dict: Dictionnaire de clé/valeur correspondant à la hierarchie du fichier de config.
+            dict: Key-value dict which matches the config file hierarchy.
 
         """
         if key is not None:
@@ -116,13 +123,35 @@ class Config():
         return dict(self._flatten([], self.conf))
 
     def __str__(self):
+        """
+        Equivalent of toString for the configuration object.
+
+        Returns:
+            str: String representation of the Config object.
+
+        """
         return 'conf:%s' % (self.conf)
 
     def __contains__(self, item):
+        """
+        Check if an element is in the Config.
+
+        Returns:
+            dict: Python dict with the desired item.
+
+        """
         return item in self.conf
 
     def __getitem__(self, key: str, default_value=''):
+        """
+        Returns an element that is in the Config.
+
+        Returns:
+            dict: Python dict with the desired item.
+
+        """
         return self.conf[key]
 
     def __setitem__(self, key: str, value: object):
+        """ Updates an element that is in the Config. """
         self.conf[key] = value

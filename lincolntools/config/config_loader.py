@@ -12,20 +12,20 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ConfigLoader():
-    """Classe utilitaire qui contient les fonctions de recherche et de création de la configuration."""
-    #: re.Pattern[]: Regex qui match le format variable d'environnement dans le fichier (ex. ${VAR_ENV})
+    """Utility class that contains the functions to search yaml files and create the configuration object ."""
+    #: re.Pattern[]: Regex which matches the environment variables format in configuration file (ex. ${VAR_ENV})
     env_path_matcher = re.compile(r'\$\{([^}^{]+)\}')
 
     @staticmethod
-    def load(file_path: str):
-        """ Lance l'action de charger le(s) fichier(s) de configuration.
-        En fonction de si c'est un path vers un fichier ou vers un dossier, on lance 2 actions différentes.
+    def load(file_path: str) -> EasyDict:
+        """ Launch the process of configuration file(s) loading.
+        Depending on whether it is a path to a file or a folder, 2 different actions are launched.
 
         Args:
-            file_path (str): Le chemin vers le fichier/dossier de configuration.
+            file_path (str): Path to configuration file/folder.
 
         Returns:
-            EasyDict: Le dictionnaire qui contient la totalité de la configuration.
+            EasyDict: The python dict which contains the whole configuration.
         """
         if os.path.isfile(file_path):
             return EasyDict(ConfigLoader.load_from_file(file_path))
@@ -33,34 +33,34 @@ class ConfigLoader():
             return EasyDict(ConfigLoader.load_from_folder(file_path))
 
     @staticmethod
-    def load_from_file(file_path: str):
-        """Crée un objet Config à partir d'un fichier yaml.
+    def load_from_file(file_path: str) -> dict:
+        """Creates a Config object from a YAML file.
 
             Args:
-                file_path (str): Le chemin absolu vers le fichier config.
+                file_path (str): Absolute path to file.
             Returns:
-                dict: Un dictionnaire qui contient la configuration.
+                dict: Python dict which contains the configuration.
         """
         return ConfigLoader.read_yaml_file(file_path)
 
     @staticmethod
-    def load_from_folder(folder_path: str, concatenate: bool = True):
-        """Crée un objet Config à partir d'un dossier. Le dossier ainsi que ses sous-dossiers sont parcourus de manière récursive pour
-            y récupérer les fichiers yaml. Ces fichiers sont ensuite lus et concatenés les uns après les autres.
+    def load_from_folder(folder_path: str, concatenate: bool = True) -> dict:
+        """Creates a Config object from a folder. The folder and its subfolder are searched recursively to get the YAML files it contains.
+        These files are then read and concatenated.
 
         Args:
-            folder_path (str): Le chemin absolu vers le dossier config.
-            concatenate (bool): Si True Les fichiers sont concatener en un fichier avant d'être parser. Par défaut à True.
+            folder_path (str): Absolute path to config folder.
+            concatenate (bool): If True, files are concatenated into a single file before it is parsed. Default value is True.
         Returns:
-            dict: Un dictionnaire qui contient les configurations concaténées.
+            dict: Python dict which contains the concatenated configs.
         """
-        # On lit tous les fichiers yaml de manière récursive
+        # Recursively read YAML files
         yaml_files = glob.glob(os.path.join(folder_path, '**/*.yaml'), recursive=True)
         yaml_files += glob.glob(os.path.join(folder_path, '**/*.yml'), recursive=True)
 
         conf = {}
         if concatenate:
-            LOGGER.info("Chargement des fichiers de configuration par concatenation")
+            LOGGER.info("Files loading and concatenation.")
             yaml_files_sorted_infos = sorted([(os.path.basename(v), i) for i, v in enumerate(yaml_files)])
             yaml_files_sorted = [yaml_files[idx] for _, idx in yaml_files_sorted_infos]
             fp = tempfile.TemporaryFile()
@@ -71,51 +71,50 @@ class ConfigLoader():
             conf = ConfigLoader.read_yaml_stream(fp)
             fp.close()
         else:
-            LOGGER.info("Chargement des fichiers de configuration")
+            LOGGER.info("Configuration files loading")
             for yaml_file in yaml_files:
                 new_conf = ConfigLoader.read_yaml_file(yaml_file)
                 conf.update(new_conf)
         return conf
 
     @staticmethod
-    def read_yaml_file(filename: str):
-        """ Crée un objet Config à partir d'un fichier.
+    def read_yaml_file(filename: str) -> dict:
+        """ Create a Config object from a file.
 
         Args:
-            filename (str): chemin du fichier
+            filename (str): Absolute path to file.
         Returns:
-            dict: Le dictionnaire qui contient les clés/valeurs du fichier yaml.
+            dict: Python dict which contains the key/value from the YAML file.
         """
-
         with open(filename, 'r') as stream:
             LOGGER.info('Chargement du fichier de configuration %s', filename)
             return ConfigLoader.read_yaml_stream(stream)
 
     @staticmethod
-    def read_yaml_stream(filestream: io.BufferedIOBase):
-        """ Crée un objet Config à partir d'un stream.
+    def read_yaml_stream(filestream: io.BufferedIOBase) -> dict:
+        """ Creates a Config object from a stream.
 
         Args:
             filestream (io.BufferedIOBase): stream
         Returns:
-            dict: Le dictionnaire qui contient les clés/valeurs du fichier yaml.
+            dict: Python dict which contains the key/value from the YAML file.
         """
-        # Constructeur qui repère les "custom tags" !join dans le fichier YAML
-        # Cela permet de lancer une fonction qui aura le rôle de concaténer 2 chaines (un peu à la manière de os.path.join(...))
+        # Constructor which finds the "custom tags" (!join) in YAML file
+        # It enables the program to start a function which will concatenate 2 strings (a bit like os.path.join(...))
         yaml.add_constructor('!join', ConfigLoader.join, yaml.SafeLoader)
-        # Resolver qui recherche à matcher le regex pour les var env
+        # Resolver which tries to match the regex for environment variables
         yaml.add_implicit_resolver('!env_var', ConfigLoader.env_path_matcher, None, yaml.SafeLoader)
-        # Constructeur attaché au détecteur précédent pour les var env
+        # Constructeur binded to the previous resolver for environment varaibles
         yaml.add_constructor('!env_var', ConfigLoader.env_path_constructor, yaml.SafeLoader)
         try:
             return yaml.safe_load(filestream)
         except yaml.YAMLError as exc:
-            LOGGER.error('Il y a une erreur de format dans le fichier de configuration')
+            LOGGER.error('Configuration file contains format error.')
             raise exc
 
     @staticmethod
     def env_path_constructor(loader: yaml.loader.SafeLoader, node: yaml.ScalarNode) -> str:
-        """ Extrait la valeur d'un noeud qui match le regex pour lire la variable d'environnement associée puis la remplacer par sa valeur. """
+        """ Extracts the value of a node that matches the regex to read the associated environment variable then replace it with its value. """
         value = node.value
         match = ConfigLoader.env_path_matcher.match(value)
         env_var = match.group(1)
@@ -123,21 +122,21 @@ class ConfigLoader():
         try:
             env_var_value = os.environ[env_var]
         except KeyError:
-            LOGGER.warning("Aucune valeur pour la variable d'environnement [%s]. Initialisation à vide.", str(env_var))
+            LOGGER.warning("No value for the following environment variable : [%s]. Initializing it as empty string.", str(env_var))
             return ''
 
         return env_var_value + value[match.end():]
 
     @staticmethod
-    def check_template_match(config_path: str, template_path: str = None):
-        """ Prend le path vers un fichier de configuration en paramètre et retourne True si les clés de son template correspondent
-        au fichier de config concerné. False sinon.
+    def check_template_match(config_path: str, template_path: str = None) -> bool:
+        """ Takes the path to a configuration file as a parameter and returns True if the keys of its template match
+        the concerned config file. If not, returns False.
 
         Args:
-            loader (yaml.loader.SafeLoader): Le loader pyaml (SafeLoader dans notre cas).
-            node (yaml.ScalarNode): Le noeud qui contient le tag dans le fichier yaml.
+            loader (yaml.loader.SafeLoader): pyaml loader (SafeLoader there).
+            node (yaml.ScalarNode): The node which contains the tag in YAML file.
         Returns:
-            bool: True si tout correspond, False sinon.
+            bool: True if everything matches, False if not.
         """
         match = False
         config_dict = ConfigLoader.read_yaml_file(config_path)
@@ -154,22 +153,21 @@ class ConfigLoader():
         if('dictionary_item_removed' not in diff.keys()):
             match = True
         else:
-            raise ValueError('{config_name} - Les clés suivantes ne sont pas dans le template: {err}'.format(config_name=config_filename, err=diff['dictionary_item_removed']))
+            raise ValueError('{config_name} - The following keys were not found in template file: {err}'.format(config_name=config_filename, err=diff['dictionary_item_removed']))
 
         return match
 
     # define custom tag handler
     @staticmethod
-    def join(loader: yaml.loader.SafeLoader, node: yaml.ScalarNode):
-        """ Handler pour custom tags. Fonction lancée à la lecture d'un fichier de configuration lorsqu'un custom tag !path est trouvé.
-        Elle permet de concaténer les chaîne en paramètre du champ. (ex: data_dir: !join [*project_dir, /data])
+    def join(loader: yaml.loader.SafeLoader, node: yaml.ScalarNode) -> str:
+        """ Custom tags handler. Function launched when reading a configuration file and a \"custom tag\" !path is found.
+        It allows to concatenate the string parameters of the field. (ex: data_dir: !join [\*project_dir, /data])
 
         Args:
-            loader (yaml.loader.SafeLoader): Le loader pyaml (SafeLoader dans notre cas).
-            node (yaml.ScalarNode): Le noeud qui contient le tag dans le fichier yaml.
+            loader (yaml.loader.SafeLoader): pyaml loader (SafeLoader there).
+            node (yaml.ScalarNode): The node which contains the tag in YAML file.
         Returns:
-            str: La valeur des 2 chaînes concaténées.
-
-        """
+            str: Concatenated value of both strings.
+        """ 
         seq = loader.construct_sequence(node)
         return ''.join([str(i) for i in seq])
