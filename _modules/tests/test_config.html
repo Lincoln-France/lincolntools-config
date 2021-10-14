@@ -1,0 +1,227 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tests.test_config &#8212; lincolntools-config 1.0.5 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tests.test_config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># #!/usr/bin/env python</span>
+
+<span class="c1"># &quot;&quot;&quot;Tests for `lincolntools-config` package.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">lincolntools.config</span> <span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">FIXTURE_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="test_singletone"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_singletone">[docs]</a><span class="k">def</span> <span class="nf">test_singletone</span><span class="p">():</span>
+    <span class="n">conf1</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+    <span class="n">conf2</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+    <span class="n">conf3</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>  <span class="c1"># noqa: F841</span>
+    <span class="k">assert</span> <span class="n">conf1</span> <span class="o">==</span> <span class="n">conf2</span>
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_singletone2"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_singletone2">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore:MarkInfo&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">datafiles</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FIXTURE_DIR</span><span class="p">,</span> <span class="s1">&#39;configs&#39;</span><span class="p">,</span> <span class="s1">&#39;basic.yaml&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_singletone2</span><span class="p">(</span><span class="n">datafiles</span><span class="p">):</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">datafiles</span><span class="o">.</span><span class="n">listdir</span><span class="p">()]</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">_</span><span class="p">:</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_update_and_dump"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_update_and_dump">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore:MarkInfo&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">datafiles</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FIXTURE_DIR</span><span class="p">,</span> <span class="s1">&#39;configs&#39;</span><span class="p">,</span> <span class="s1">&#39;basic.yaml&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_update_and_dump</span><span class="p">(</span><span class="n">datafiles</span><span class="p">):</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">datafiles</span><span class="o">.</span><span class="n">listdir</span><span class="p">()]</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;_version&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;baz&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">}</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;baz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;bar&#39;</span><span class="p">][</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">10</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;baz&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+
+    <span class="n">yaml_string</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">yaml_string</span> <span class="o">==</span> <span class="s1">&#39;_version: 2</span><span class="se">\n</span><span class="s1">foo:</span><span class="se">\n</span><span class="s1">  bar:</span><span class="se">\n</span><span class="s1">    test: 10</span><span class="se">\n</span><span class="s1">  baz: 3</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+    <span class="n">yaml_string</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">yaml_string</span> <span class="o">==</span> <span class="s1">&#39;_version: 3</span><span class="se">\n</span><span class="s1">foo:</span><span class="se">\n</span><span class="s1">  bar:</span><span class="se">\n</span><span class="s1">    test: 10</span><span class="se">\n</span><span class="s1">  baz: 3</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;bar&#39;</span><span class="p">][</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">10</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">][</span><span class="s1">&#39;baz&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_flatten"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_flatten">[docs]</a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore:MarkInfo&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">datafiles</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FIXTURE_DIR</span><span class="p">,</span> <span class="s1">&#39;configs&#39;</span><span class="p">,</span> <span class="s1">&#39;basic.yaml&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_flatten</span><span class="p">(</span><span class="n">datafiles</span><span class="p">):</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">datafiles</span><span class="o">.</span><span class="n">listdir</span><span class="p">()]</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;tar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;test&#39;</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;variation&#39;</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">_flatten</span><span class="p">([],</span> <span class="n">config</span><span class="o">.</span><span class="n">conf</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;foo-bar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;foo-baz&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;tar&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="s1">&#39;variation&#39;</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;foo-bar&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;foo-baz&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tar&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;variation&#39;</span>
+
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_contains"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_contains">[docs]</a><span class="k">def</span> <span class="nf">test_contains</span><span class="p">():</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">assert</span> <span class="p">(</span><span class="s1">&#39;key&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="s1">&#39;not_exists&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span>
+
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_get_default"><a class="viewcode-back" href="../../tests.html#tests.test_config.test_get_default">[docs]</a><span class="k">def</span> <span class="nf">test_get_default</span><span class="p">():</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;not_exists&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+    <span class="n">Config</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">lincolntools-config</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../README.html">lincolntools-config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">lincolntools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../AUTHORS.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../HISTORY.html">History</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Lincoln Innovation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
